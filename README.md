@@ -184,3 +184,65 @@ full to-do list:
     - Calls verify.py which handles all scoring logic
     - Prints the reward to stdout for Harbor to capture
     - Kept minimal — all logic lives in verify.py
+
+
+full to-do list:
+                                                                                                          
+    ---                                                                                                   
+    SwarmBench Assessment — To-Do List                                                                    
+                                                                                                          
+    Data & Setup  - DONE
+
+    - Read and understand the README / assessment requirements
+    - Confirm Docker is installed
+    - Confirm file structure is complete
+    - Download Superstore dataset from Kaggle
+    - Run data_prep.ipynb to generate 4 regional CSV files
+    - Verify oracle expected output (oracle_expected.json)
+
+    Task Package Files
+
+    - Write instruction.md  - DONE
+    - Write task.toml       - DONE
+    - Write decomposition.yaml   - DONE
+    - Write environment/Dockerfile
+    - Write solution/solve.sh  - Done
+    - Write solution/oracle.json  
+    - Write tests/verify.py     - DONE
+    - Write tests/test.sh       - DONE
+    - Write tests/oracle.json
+    - Write tests/judge.py (minimal placeholder)
+
+    Oracle Verification
+
+    - Build Docker image                
+    - Run oracle (solution/solve.sh) inside container
+    - Run verifier (tests/test.sh) inside container
+    - Confirm oracle score = 1.0
+
+    Final Submission
+
+    - Review instruction.md is role-neutral
+    - Review decomposition.yaml has clear sub-agent assignments
+    - Remove any execution_logs/ if present
+    - Final check — all files present and non-empty
+
+    ---
+    11 files to write, then one oracle run to confirm. That's it.
+	
+	  File                    │                        Purpose                         │
+  ├───────────────────────────────────────────┼────────────────────────────────────────────────────────┤
+  │ Requirements/environment/Dockerfile       │ Container with pandas + 4 regional CSVs                │
+  ├───────────────────────────────────────────┼────────────────────────────────────────────────────────┤
+  │ Requirements/environment/input_artifacts/ │ 4 region CSVs with schema differences, duplicates,     │
+  │                                           │ nulls, negatives, whitespace                           │
+  ├───────────────────────────────────────────┼────────────────────────────────────────────────────────┤
+  │ Requirements/instruction.md               │ Agent prompt                                           │
+  ├───────────────────────────────────────────┼────────────────────────────────────────────────────────┤
+  │ Requirements/task.toml                    │ Task metadata                                          │
+  ├───────────────────────────────────────────┼────────────────────────────────────────────────────────┤
+  │ Requirements/decomposition.yaml           │ Map-reduce multi-agent layout                          │
+  ├───────────────────────────────────────────┼────────────────────────────────────────────────────────┤
+  │ Requirements/solution/solve.sh            │ Oracle solution                                        │
+  ├───────────────────────────────────────────┼────────────────────────────────────────────────────────┤
+  │ Requirements/tests/verify.py + test.sh    │ Deterministic verifier, confirmed Score: 1.0    
