@@ -1,0 +1,136 @@
+task: Regional Sales Reconciliation
+
+strategy: map_reduce
+
+agents:
+
+  - id: map_west
+    role: Map Agent — West Region
+    instructions: |
+      Read /task/input_artifacts/sales_west.csv
+
+      Columns:
+      - row_id
+      - sub_category
+      - sales
+      - quantity
+      - order_date
+
+      Tasks:
+      - Normalize columns to: row_id, sub_category, sales
+      - Convert sales to numeric
+      - Remove rows where sales is null, empty, non-numeric, or negative
+      - Strip whitespace from sub_category
+
+      Output:
+      Write /task/work/west.json with structure:
+
+      {
+        "region": "west",
+        "records": [
+          {
+            "row_id": "...",
+            "sub_category": "...",
+            "sales": 0.0
+          }
+        ],
+        "skipped": 0
+      }
+
+  - id: map_east
+    role: Map Agent — East Region
+    instructions: |
+      Read /task/input_artifacts/sales_east.csv
+
+      Column mappings:
+      - transaction_id -> row_id
+      - product_category -> sub_category
+      - revenue -> sales
+
+      Tasks:
+      - Normalize columns to: row_id, sub_category, sales
+      - Convert sales to numeric
+      - Remove rows where sales is null, empty, non-numeric, or negative
+      - Strip whitespace from sub_category
+
+      Output:
+      Write /task/work/east.json using the same structure as west.json
+      Set region = "east"
+
+  - id: map_central
+    role: Map Agent — Central Region
+    instructions: |
+      Read /task/input_artifacts/sales_central.csv
+
+      Column mappings:
+      - txn_id -> row_id
+      - category -> sub_category
+      - sales_amount -> sales
+
+      Tasks:
+      - Normalize columns to: row_id, sub_category, sales
+      - Convert sales to numeric
+      - Remove rows where sales is null, empty, non-numeric, or negative
+      - Strip whitespace from sub_category
+
+      Output:
+      Write /task/work/central.json using the same structure as west.json
+      Set region = "central"
+
+  - id: map_south
+    role: Map Agent — South Region
+    instructions: |
+      Read /task/input_artifacts/sales_south.csv
+
+      Column mappings:
+      - id -> row_id
+      - item_category -> sub_category
+      - amount -> sales
+
+      Tasks:
+      - Normalize columns to: row_id, sub_category, sales
+      - Convert sales to numeric
+      - Remove rows where sales is null, empty, non-numeric, or negative
+      - Strip whitespace from sub_category
+
+      Output:
+      Write /task/work/south.json using the same structure as west.json
+      Set region = "south"
+
+  - id: reducer
+    role: Reducer Agent
+    depends_on:
+      - map_west
+      - map_east
+      - map_central
+      - map_south
+
+    instructions: |
+      Read:
+      - /task/work/west.json
+      - /task/work/east.json
+      - /task/work/central.json
+      - /task/work/south.json
+
+      Merge all records into one combined list.
+
+      Deduplicate records by row_id.
+      Keep the first occurrence encountered in this order:
+      west -> east -> central -> south
+
+      Count all removed duplicate rows.
+
+      Sum skipped counts from all map agents.
+
+      Compute:
+      - total_sales
+      - region_totals
+      - top_3_sub_categories
+      - duplicate_rows_removed
+      - records_skipped_missing_sales
+
+      Round all sales totals to 2 decimal places.
+
+      Write final output to:
+      /task/report.json
+
