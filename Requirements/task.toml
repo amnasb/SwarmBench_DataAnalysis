@@ -1,0 +1,50 @@
+toml id="v2n1sq"
+id = "regional_sales_reconciliation"
+
+title = "Regional Sales Reconciliation"
+
+description = """
+Analyze four regional sales CSV files with inconsistent schemas.
+Normalize fields, remove duplicates and invalid records,
+reconcile totals across regions, and generate a final JSON report.
+"""
+
+domain = "data-analysis"
+
+tags = [
+  "csv",
+  "data-cleaning",
+  "reconciliation",
+  "aggregation",
+  "deduplication",
+  "multi-agent"
+]
+
+timeout_sec = 1800
+
+coordination_pattern = "map_reduce"
+
+difficulty = "hard"
+
+[environment]
+dockerfile = "environment/Dockerfile"
+
+[agent]
+instruction_file = "instruction.md"
+decomposition_file = "decomposition.yaml"
+
+[solution]
+entrypoint = "solution/solve.sh"
+
+[tests]
+test_script = "tests/test.sh"
+
+[verifier]
+type = "executable"
+
+expected_multi_agent_score = 1.0
+expected_single_agent_score = 0.6
+
+
+
+
