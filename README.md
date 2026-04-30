@@ -1,248 +1,366 @@
-This is my README.md file
+# SwarmBench Assessment — Regional Sales Reconciliation
 
-This assessment checks whether you can design a benchmark task where a single agent is likely to fail, but a multi-agent system can succeed through decomposition, parallel work, and synthesis.
-You are not expected to run single-agent or multi-agent trials, prove a 40-point gap, or submit execution logs during this assessment. Production tasks require real runs and above ask. This assessment evaluates whether your task design is structurally likely to create that gap.
-You are expected to run the oracle once. The oracle must score 1.0. This proves your Dockerfile, solution/solve.sh, tests/test.sh, and verifier are wired correctly.
+## Overview
 
+This project is a SwarmBench benchmark task designed to evaluate whether a **multi-agent AI system** can outperform a **single AI agent** on a coordination-heavy data reconciliation workflow.
 
-SwarmBench evaluates whether multi-agent AI systems outperform a single AI agent on tasks that are too broad, too long, or too coordination-heavy for one agent to solve reliably.
-Each task is a self-contained benchmark package. It includes:
-instruction.md - the task prompt the agent receives
-task.toml - metadata, domain, timeout, verifier type, and coordination pattern
-decomposition.yaml - how the multi-agent system should split the work. It is only shown to the multi-agent system.
-environment/Dockerfile - the runtime environment for the agent
-tests/ - verifier or llm judge logic
-solution/solve.sh - the oracle solution path
-The main comparison is:
-swarm-kimi-single - one agent, no sub-agent spawning
-swarm-kimi-multi - an orchestrator agent that reads decomposition.yaml and spawns sub-agents
-A strong benchmark has a meaningful gap:
-oracle solution scores 1.0
-multi-agent scores near 1.0
-single-agent scores much lower, ideally 0.60 or below
-target production gap is at least 40 percentage points
+The benchmark intentionally creates:
 
-Harbor is the evaluation harness used by SwarmBench.
-At runtime, Harbor:
-Reads the task directory.
-Builds the Docker image from environment/Dockerfile.
-Starts the task container.
-Gives the agent the contents of instruction.md.
-Lets the agent work inside the container.
-Runs tests/test.sh.
-Reads the reward produced by the verifier.
-Saves execution logs and trajectories.
-You do not need to manage containers manually. Your responsibility is to design the files Harbor needs and run the Oracle once to confirm the package is valid and your solution is valid for your written test case.
+* multiple independent artifacts
+* schema inconsistencies
+* cross-file reconciliation pressure
+* deduplication requirements
+* synthesis-heavy aggregation
 
-Files Are Used During Execution
-The agent receives the task through instruction.md.
-The environment is built from anything inside environment/ directory :
-environment/Dockerfile
-environment/input_artifacts/        optional data files
-The verifier is run from:
-tests/test.sh
-tests/verify.py                     for executable verifier tasks
-tests/judge.py                      for llm-judge tasks
-tests/oracle.json                   recommended for llm-judge tasks
-The oracle solution lives in:
-solution/solve.sh
-solution/oracle.json                for llm-judge tasks when useful
-The multi-agent orchestrator additionally reads:
-decomposition.yaml
-Important rule:
-instruction.md must be role-neutral. It is shared by single-agent and multi-agent runs. Do not put sub-agent instructions, map-agent instructions, shard assignments, or synthesizer instructions in instruction.md. Those details belong only in decomposition.yaml.
-For this assessment, do not include execution_logs/. You are expected to run only the oracle and report the oracle score.
+The task is structured so that:
 
-
-Task Shape: many artifacts -> independent subproblem solving -> reducer synthesis -> verified final output
-
-The goal is not to trick the single agent. The goal is to create real structural pressure.
-
-Good single-agent failure modes:
-context overload
-attention degradation
-incomplete artifact coverage
-missed secondary requirements
-timeout under the same time budget
-failure to reconcile outputs consistently
-
-Good multi-agent success modes:
-independent shard ownership
-parallel extraction or inspection
-clear sub-agent outputs
-reducer verifies completeness
-final synthesis reconciles all outputs
-Strong task patterns:
-fixing many independent issues across a large codebase
-extracting structured evidence from many papers or reports
-reconciling multiple inconsistent datasets
-planning under many constraints across schedules, inventories, or incidents
-solving many independent reasoning subproblems before a final synthesis step
-
-
-Data Analysis Role Based Assesment:
-Choose multiple CSVs, JSON files, spreadsheets, logs, or database exports.
-Good task shape:
-inconsistent schemas
-missing values
-duplicate records
-per-shard calculations
-final reconciliation across all shards
-Single-agent likely fails by processing only some files or producing inconsistent aggregation.
-
-
-full to-do list:
-                                                                                                          
-    ---                                                                                                   
-    SwarmBench Assessment — To-Do List                                                                    
-                                                                                                          
-    Data & Setup  - DONE
-
-    - Read and understand the README / assessment requirements
-    - Confirm Docker is installed
-    - Confirm file structure is complete
-    - Download Superstore dataset from Kaggle
-    - Run data_prep.ipynb to generate 4 regional CSV files
-    - Verify oracle expected output (oracle_expected.json)
-
-    Task Package Files
-
-    - Write instruction.md
-    - Write task.toml
-    - Write decomposition.yaml
-    - Write environment/Dockerfile
-    - Write solution/solve.sh
-    - Write solution/oracle.json
-    - Write tests/verify.py
-    - Write tests/test.sh
-    - Write tests/oracle.json
-    - Write tests/judge.py (minimal placeholder)
-
-    Oracle Verification
-
-    - Build Docker image
-    - Run oracle (solution/solve.sh) inside container
-    - Run verifier (tests/test.sh) inside container
-    - Confirm oracle score = 1.0
-
-    Final Submission
-
-    - Review instruction.md is role-neutral
-    - Review decomposition.yaml has clear sub-agent assignments
-    - Remove any execution_logs/ if present
-    - Final check — all files present and non-empty
-
-    ---
-    11 files to write, then one oracle run to confirm. That's it.
-
+* a **single agent** is likely to struggle with bookkeeping, consistency, and global reconciliation
+* a **multi-agent system** can succeed through decomposition, parallel processing, and reducer synthesis
 
 ---
-    INSTRUCTION.MD SPECS:
-    - Role-neutral — no mention of sub-agents, shards, or splitting work
-    - Column name differences are hinted at but not spelled out — agent must inspect each file
-    - "First occurrence" deduplication rule requires tracking IDs across all files simultaneously — hard
-    for a single agent to do reliably
-    - Does not prescribe how to process files — single agent must manage all 4 in context at once
 
-    TASK.TOML SPECS:
-    - timeout = 600 — 10 minutes, enough for multi-agent parallel work but tight for a single agent
-    processing all 4 files carefully and sequentially
-    - verifier_type = "executable" — scoring is done by verify.py, not an LLM judge — output must be exact
-    - coordination_pattern = "map_reduce" — signals to Harbor that this task is designed for parallel
-    shard processing followed by a reduction step
+# Assessment Goal
 
-    DECOMPOSITION.YAML SPECS:
-    - Only shown to the multi-agent system, never to the single agent
-    - Each map agent owns exactly one file — clear shard ownership, no overlap
-    - Column mapping is spelled out explicitly per agent — removes ambiguity for sub-agents
-    - depends_on on the reducer tells the orchestrator to wait for all 4 map agents to finish before
-    running the reducer
-    - Intermediate results go to /task/work/*.json — reducer reads from there, not directly from CSVs
+The objective is **not** to trick the single agent.
 
-    DOCKERFILE SPECS:
-    - WORKDIR /task — establishes the base path used by all scripts and agents
-    - COPY input_artifacts/ bakes the data into the image at build time — agent doesn't need to fetch
-    anything
-    - mkdir -p /task/work — pre-creates the folder map agents write intermediate results to
-    - Only dependency is pandas — kept minimal on purpose
+The objective is to create a task where:
 
-    SOLVE.SH SPECS:
-    - Fully self-contained Python heredoc — no external script files needed inside the container
-    - Processing order is fixed (west → east → central → south) — determines which occurrence is "first"
-    during deduplication
-    - Identical logic to data_prep.py oracle computation — guaranteed to produce the same numbers as
-    oracle_expected.json
-    - Writes to /task/report.json — same path the verifier reads from
+* one agent faces structural pressure from context and coordination complexity
+* multiple agents can divide work cleanly and synthesize results reliably
 
-    VERIFY.PY SPECS:
-    - Oracle values are hardcoded — no dependency on external oracle.json file at runtime
-    - Scoring is field-by-field — each of 5 fields worth 0.2 points, total = 1.0
-    - Uses 0.01 tolerance for float comparisons to avoid floating point precision issues
-    - Writes reward to /task/reward file — this is what Harbor reads to record the score
+This assessment evaluates whether the task design is **structurally likely** to produce a meaningful performance gap between:
 
-    TEST.SH SPECS:
-    - Calls verify.py which handles all scoring logic
-    - Prints the reward to stdout for Harbor to capture
-    - Kept minimal — all logic lives in verify.py
+* `swarm-kimi-single`
+* `swarm-kimi-multi`
+
+---
+
+# Important Clarification
+
+You are **NOT required** to:
+
+* run single-agent trials
+* run multi-agent trials
+* prove a 40-point benchmark gap
+* submit execution logs
+
+You **ARE required** to:
+
+* build a valid benchmark package
+* run the oracle solution once
+* confirm the oracle scores `1.0`
+
+The oracle verification proves:
+
+* Docker setup works
+* solution wiring works
+* verifier logic works
+* task package is valid
+
+---
+
+# What SwarmBench Evaluates
+
+SwarmBench measures whether multi-agent systems outperform a single agent on tasks that are:
+
+* too broad
+* too coordination-heavy
+* too artifact-heavy
+* too synthesis-heavy
+
+for a single agent to solve reliably within the same constraints.
+
+---
+
+# Benchmark Structure
+
+Each benchmark task is a self-contained package.
+
+## Required Files
+
+| File                           | Purpose                                   |
+| ------------------------------ | ----------------------------------------- |
+| `instruction.md`               | Task prompt shown to the agent            |
+| `task.toml`                    | Task metadata and execution configuration |
+| `decomposition.yaml`           | Multi-agent decomposition plan            |
+| `environment/Dockerfile`       | Runtime environment                       |
+| `environment/input_artifacts/` | Dataset artifacts                         |
+| `solution/solve.sh`            | Oracle solution                           |
+| `tests/test.sh`                | Verifier entrypoint                       |
+| `tests/verify.py`              | Deterministic scoring logic               |
+| `tests/oracle.json`            | Expected oracle output                    |
+| `tests/judge.py`               | Placeholder LLM judge                     |
+
+---
+
+# Harbor Evaluation Flow
+
+Harbor is the execution harness used by SwarmBench.
+
+At runtime Harbor:
+
+1. Reads the task directory
+2. Builds the Docker image
+3. Starts the task container
+4. Provides `instruction.md` to the agent
+5. Lets the agent operate inside the container
+6. Runs `tests/test.sh`
+7. Reads the reward produced by the verifier
+8. Records logs and trajectories
+
+You do not need to manually orchestrate containers during evaluation.
+
+---
+
+# Important Design Rule
+
+## `instruction.md` MUST remain role-neutral
+
+It is shared by:
+
+* single-agent runs
+* multi-agent runs
+
+Do NOT include:
+
+* sub-agent instructions
+* shard assignments
+* orchestration logic
+* reducer instructions
+* map-reduce details
+
+Those belong ONLY inside:
+
+```text
+decomposition.yaml
+```
+
+---
+
+# Benchmark Task
+
+## Regional Sales Reconciliation
+
+The task uses multiple regional sales CSV exports containing:
+
+* inconsistent schemas
+* duplicate records
+* invalid sales values
+* whitespace inconsistencies
+* noisy irrelevant columns
+* dirty numeric formats
+
+The agent must:
+
+* normalize schemas
+* clean records
+* reconcile duplicates globally
+* compute aggregate metrics
+* generate a final JSON report
+
+---
+
+# Multi-Agent Design Pattern
+
+The benchmark follows a classic:
+
+```text
+many artifacts
+    ↓
+independent shard processing
+    ↓
+reducer synthesis
+    ↓
+verified final output
+```
+
+This creates a natural advantage for multi-agent systems.
+
+---
+
+# Intended Single-Agent Failure Modes
+
+The benchmark is designed to pressure single agents through:
+
+* context overload
+* attention degradation
+* incomplete artifact coverage
+* missed edge cases
+* inconsistent reconciliation
+* bookkeeping errors
+* timeout pressure
+
+---
+
+# Intended Multi-Agent Success Modes
+
+The benchmark rewards:
+
+* independent shard ownership
+* parallel extraction
+* isolated schema normalization
+* reducer-based synthesis
+* explicit intermediate outputs
+* coordinated reconciliation
+
+---
+
+# Current Task Structure
+
+## Dataset Shape
+
+The benchmark generates:
+
+* 16 regional CSV shards
+* randomized schemas
+* cross-file duplicates
+* invalid sales values
+* casing inconsistencies
+* whitespace inconsistencies
+* shuffled rows/columns
+* noisy metadata columns
+
+This substantially increases reconciliation complexity while remaining fully solvable through decomposition.
+
+---
+
+# File Responsibilities
+
+| File                     | Responsibility                |
+| ------------------------ | ----------------------------- |
+| `instruction.md`         | Neutral task prompt           |
+| `task.toml`              | Harbor execution metadata     |
+| `decomposition.yaml`     | Map-reduce decomposition plan |
+| `environment/Dockerfile` | Runtime container             |
+| `solution/solve.sh`      | Oracle implementation         |
+| `tests/verify.py`        | Deterministic verifier        |
+| `tests/test.sh`          | Verifier runner               |
+| `tests/oracle.json`      | Expected oracle output        |
+
+---
+
+# Design Decisions
+
+## instruction.md
+
+* Role-neutral
+* No decomposition hints
+* Requires global deduplication tracking
+* Forces schema inspection across artifacts
+
+## task.toml
+
+* `coordination_pattern = "map_reduce"`
+* `verifier_type = "executable"`
+* Tight execution timeout
+* Structured for reducer synthesis
+
+## decomposition.yaml
+
+* One map agent per shard group
+* Explicit schema mappings
+* Reducer waits on all map agents
+* Intermediate outputs written to `/task/work/*.json`
+
+## Dockerfile
+
+* Minimal environment
+* Pandas-based runtime
+* Input artifacts baked into image
+* `/task/work` pre-created
+
+## solve.sh
+
+* Fully deterministic oracle
+* Fixed reconciliation order
+* Produces `/task/report.json`
+
+## verify.py
+
+* Deterministic scoring
+* Field-by-field validation
+* Floating-point tolerance handling
+* Writes reward to `/task/reward`
+
+---
+
+# Oracle Verification Workflow
+
+## Build Docker Image
+
+```bash
+docker build -f environment/Dockerfile -t regional-sales .
+```
+
+## Start Container
+
+```bash
+docker run -it regional-sales bash
+```
+
+## Run Oracle
+
+```bash
+bash solution/solve.sh
+```
+
+## Run Verifier
+
+```bash
+bash tests/test.sh
+```
+
+Expected output:
+
+```text
+Score: 1.0
+```
+
+---
+
+# Submission Checklist
+
+## Data & Setup
+
+* [x] Download Superstore dataset
+* [x] Generate benchmark CSV shards
+* [x] Create inconsistent schemas
+* [x] Inject duplicates and invalid values
+
+## Benchmark Files
+
+* [x] instruction.md
+* [x] task.toml
+* [x] decomposition.yaml
+* [x] environment/Dockerfile
+* [x] solution/solve.sh
+* [x] tests/verify.py
+* [x] tests/test.sh
 
 
-full to-do list:
-                                                                                                          
-    ---                                                                                                   
-    SwarmBench Assessment — To-Do List                                                                    
-                                                                                                          
-    Data & Setup  - DONE
+* [x] solution/oracle.json
+* [x]  tests/oracle.json
+* [x] tests/judge.py
 
-    - Read and understand the README / assessment requirements
-    - Confirm Docker is installed
-    - Confirm file structure is complete
-    - Download Superstore dataset from Kaggle
-    - Run data_prep.ipynb to generate 4 regional CSV files
-    - Verify oracle expected output (oracle_expected.json)
+## Validation
 
-    Task Package Files
+* [x]  Build Docker image
+* [x]  Run oracle
+* [x]  Run verifier
+* [x]  Confirm oracle score = 1.0
 
-    - Write instruction.md  - DONE
-    - Write task.toml       - DONE
-    - Write decomposition.yaml   - DONE
-    - Write environment/Dockerfile
-    - Write solution/solve.sh  - Done
-    - Write solution/oracle.json  
-    - Write tests/verify.py     - DONE
-    - Write tests/test.sh       - DONE
-    - Write tests/oracle.json
-    - Write tests/judge.py (minimal placeholder)
+---
 
-    Oracle Verification
+# Final Goal
 
-    - Build Docker image                
-    - Run oracle (solution/solve.sh) inside container
-    - Run verifier (tests/test.sh) inside container
-    - Confirm oracle score = 1.0
+The final benchmark should demonstrate a realistic coordination advantage where:
 
-    Final Submission
+* single-agent systems struggle with scale and reconciliation
+* multi-agent systems succeed through decomposition and synthesis
 
-    - Review instruction.md is role-neutral
-    - Review decomposition.yaml has clear sub-agent assignments
-    - Remove any execution_logs/ if present
-    - Final check — all files present and non-empty
+while remaining:
 
-    ---
-    11 files to write, then one oracle run to confirm. That's it.
-	
-	  File                    │                        Purpose                         │
-  ├───────────────────────────────────────────┼────────────────────────────────────────────────────────┤
-  │ Requirements/environment/Dockerfile       │ Container with pandas + 4 regional CSVs                │
-  ├───────────────────────────────────────────┼────────────────────────────────────────────────────────┤
-  │ Requirements/environment/input_artifacts/ │ 4 region CSVs with schema differences, duplicates,     │
-  │                                           │ nulls, negatives, whitespace                           │
-  ├───────────────────────────────────────────┼────────────────────────────────────────────────────────┤
-  │ Requirements/instruction.md               │ Agent prompt                                           │
-  ├───────────────────────────────────────────┼────────────────────────────────────────────────────────┤
-  │ Requirements/task.toml                    │ Task metadata                                          │
-  ├───────────────────────────────────────────┼────────────────────────────────────────────────────────┤
-  │ Requirements/decomposition.yaml           │ Map-reduce multi-agent layout                          │
-  ├───────────────────────────────────────────┼────────────────────────────────────────────────────────┤
-  │ Requirements/solution/solve.sh            │ Oracle solution                                        │
-  ├───────────────────────────────────────────┼────────────────────────────────────────────────────────┤
-  │ Requirements/tests/verify.py + test.sh    │ Deterministic verifier, confirmed Score: 1.0    
+* deterministic
+* verifiable
+* reproducible
+* structurally fair
