@@ -1,0 +1,114 @@
+[
+  {
+    "file": "../Requirements/environment/input_artifacts\\sales_west_q1.csv",
+    "id_column": "txn_id",
+    "category_column": "sub_cat",
+    "sales_column": "revenue",
+    "rows": 1200
+  },
+  {
+    "file": "../Requirements/environment/input_artifacts\\sales_west_q2.csv",
+    "id_column": "sale_id",
+    "category_column": "subcategory",
+    "sales_column": "sales",
+    "rows": 1200
+  },
+  {
+    "file": "../Requirements/environment/input_artifacts\\sales_west_q3.csv",
+    "id_column": "id",
+    "category_column": "sub_category",
+    "sales_column": "usd_amount",
+    "rows": 1200
+  },
+  {
+    "file": "../Requirements/environment/input_artifacts\\sales_west_q4.csv",
+    "id_column": "sale_id",
+    "category_column": "subcategory",
+    "sales_column": "revenue",
+    "rows": 1200
+  },
+  {
+    "file": "../Requirements/environment/input_artifacts\\sales_east_q1.csv",
+    "id_column": "record_id",
+    "category_column": "subcategory",
+    "sales_column": "sales_amount",
+    "rows": 1200
+  },
+  {
+    "file": "../Requirements/environment/input_artifacts\\sales_east_q2.csv",
+    "id_column": "txn_id",
+    "category_column": "item_type",
+    "sales_column": "usd_amount",
+    "rows": 1200
+  },
+  {
+    "file": "../Requirements/environment/input_artifacts\\sales_east_q3.csv",
+    "id_column": "id",
+    "category_column": "product_category",
+    "sales_column": "sales_amount",
+    "rows": 1200
+  },
+  {
+    "file": "../Requirements/environment/input_artifacts\\sales_east_q4.csv",
+    "id_column": "sale_id",
+    "category_column": "category",
+    "sales_column": "revenue",
+    "rows": 1200
+  },
+  {
+    "file": "../Requirements/environment/input_artifacts\\sales_central_q1.csv",
+    "id_column": "txn_id",
+    "category_column": "category",
+    "sales_column": "usd_amount",
+    "rows": 1200
+  },
+  {
+    "file": "../Requirements/environment/input_artifacts\\sales_central_q2.csv",
+    "id_column": "txn_id",
+    "category_column": "sub_category",
+    "sales_column": "sales_amount",
+    "rows": 1200
+  },
+  {
+    "file": "../Requirements/environment/input_artifacts\\sales_central_q3.csv",
+    "id_column": "txn_id",
+    "category_column": "product_category",
+    "sales_column": "revenue",
+    "rows": 1200
+  },
+  {
+    "file": "../Requirements/environment/input_artifacts\\sales_central_q4.csv",
+    "id_column": "record_id",
+    "category_column": "subcategory",
+    "sales_column": "usd_amount",
+    "rows": 1200
+  },
+  {
+    "file": "../Requirements/environment/input_artifacts\\sales_south_q1.csv",
+    "id_column": "record_id",
+    "category_column": "sub_category",
+    "sales_column": "usd_amount",
+    "rows": 1200
+  },
+  {
+    "file": "../Requirements/environment/input_artifacts\\sales_south_q2.csv",
+    "id_column": "txn_id",
+    "category_column": "sub_category",
+    "sales_column": "sales_amount",
+    "rows": 1200
+  },
+  {
+    "file": "../Requirements/environment/input_artifacts\\sales_south_q3.csv",
+    "id_column": "txn_id",
+    "category_column": "category",
+    "sales_column": "amount",
+    "rows": 1200
+  },
+  {
+    "file": "../Requirements/environment/input_artifacts\\sales_south_q4.csv",
+    "id_column": "record_id",
+    "category_column": "subcategory",
+    "sales_column": "sales_amount",
+    "rows": 1200
+  }
+]

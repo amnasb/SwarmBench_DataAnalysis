@@ -6,7 +6,11 @@
     "central": 319601.36,
     "south": 228152.53
   },
-  "top_3_sub_categories": ["Chairs", "Phones", "Binders"],
+  "top_3_sub_categories": [
+    "Chairs",
+    "Phones",
+    "Binders"
+  ],
   "duplicate_rows_removed": 9937,
   "records_skipped_missing_sales": 1152
 }

@@ -1,61 +1,137 @@
-task: Regional Sales Reconciliation                                                                     
-  strategy: map_reduce
+task: Regional Sales Reconciliation
 
-  agents:
-    - id: map_west
-      role: Map Agent — West Region
-      instructions: |
-        Read /task/input_artifacts/sales_west.csv
-        Columns: row_id, sub_category, sales, quantity, order_date
-        - Drop rows where sales is null or negative
-        - Strip whitespace from sub_category
-        - Output to /task/work/west.json with structure:
-          {"region": "west", "records": [{"row_id": ..., "sub_category": ..., "sales": ...}, ...],
-  "skipped": <int>}
+strategy: map_reduce
 
-    - id: map_east
-      role: Map Agent — East Region
-      instructions: |
-        Read /task/input_artifacts/sales_east.csv
-        Columns: transaction_id, product_category, revenue, units, date
-        Map: transaction_id → row_id, product_category → sub_category, revenue → sales
-        - Drop rows where sales is null or negative
-        - Strip whitespace from sub_category
-        - Output to /task/work/east.json with same structure as above, region: "east"
+agents:
 
-    - id: map_central
-      role: Map Agent — Central Region
-      instructions: |
-        Read /task/input_artifacts/sales_central.csv
-        Columns: txn_id, category, sales_amount, qty, sale_date
-        Map: txn_id → row_id, category → sub_category, sales_amount → sales
-        - Drop rows where sales is null or negative
-        - Strip whitespace from sub_category
-        - Output to /task/work/central.json with same structure, region: "central"
+  - id: map_west
+    role: Map Agent — West Region
+    instructions: |
+      Read the following files from /task/input_artifacts/:
+        - sales_west_q1.csv
+        - sales_west_q2.csv
+        - sales_west_q3.csv
+        - sales_west_q4.csv
 
-    - id: map_south
-      role: Map Agent — South Region
-      instructions: |
-        Read /task/input_artifacts/sales_south.csv
-        Columns: id, item_category, amount, num_units, transaction_date
-        Map: id → row_id, item_category → sub_category, amount → sales
-        - Drop rows where sales is null or negative
-        - Strip whitespace from sub_category
-        - Output to /task/work/south.json with same structure, region: "south"
+      Use /task/input_artifacts/schema_reference.json to identify the correct
+      column names (row_id, sub_category, sales) for each file.
 
-    - id: reducer
-      role: Reducer Agent
-      depends_on: [map_west, map_east, map_central, map_south]
-      instructions: |
-        Read all 4 files from /task/work/*.json
-        Merge all records into one list.
-        Deduplicate by row_id — keep first occurrence (west → east → central → south order).
-        Count duplicates removed.
-        Sum skipped counts from all map agents.
-        Compute:
-          - total_sales: sum of all valid sales after dedup
-          - region_totals: per-region sales sum after dedup
-          - top_3_sub_categories: top 3 by total sales descending
-          - duplicate_rows_removed: total duplicates removed
-          - records_skipped_missing_sales: total skipped across all agents
-        Write final output to /task/report.json
+      For each file:
+      - Rename columns to: row_id, sub_category, sales
+      - Parse sales: strip $, USD, commas, whitespace, convert to numeric
+      - Remove rows where sales is null, non-numeric, or negative
+      - Strip whitespace and normalize casing on sub_category (Title Case)
+      - Track count of skipped rows
+
+      Combine all 4 quarters into one list.
+
+      Output to /task/work/west.json:
+      {
+        "region": "west",
+        "records": [{"row_id": ..., "sub_category": ..., "sales": ...}],
+        "skipped": <int>
+      }
+
+  - id: map_east
+    role: Map Agent — East Region
+    instructions: |
+      Read the following files from /task/input_artifacts/:
+        - sales_east_q1.csv
+        - sales_east_q2.csv
+        - sales_east_q3.csv
+        - sales_east_q4.csv
+
+      Use /task/input_artifacts/schema_reference.json to identify the correct
+      column names (row_id, sub_category, sales) for each file.
+
+      For each file:
+      - Rename columns to: row_id, sub_category, sales
+      - Parse sales: strip $, USD, commas, whitespace, convert to numeric
+      - Remove rows where sales is null, non-numeric, or negative
+      - Strip whitespace and normalize casing on sub_category (Title Case)
+      - Track count of skipped rows
+
+      Combine all 4 quarters into one list.
+
+      Output to /task/work/east.json using the same structure.
+      Set region = "east"
+
+  - id: map_central
+    role: Map Agent — Central Region
+    instructions: |
+      Read the following files from /task/input_artifacts/:
+        - sales_central_q1.csv
+        - sales_central_q2.csv
+        - sales_central_q3.csv
+        - sales_central_q4.csv
+
+      Use /task/input_artifacts/schema_reference.json to identify the correct
+      column names (row_id, sub_category, sales) for each file.
+
+      For each file:
+      - Rename columns to: row_id, sub_category, sales
+      - Parse sales: strip $, USD, commas, whitespace, convert to numeric
+      - Remove rows where sales is null, non-numeric, or negative
+      - Strip whitespace and normalize casing on sub_category (Title Case)
+      - Track count of skipped rows
+
+      Combine all 4 quarters into one list.
+
+      Output to /task/work/central.json using the same structure.
+      Set region = "central"
+
+  - id: map_south
+    role: Map Agent — South Region
+    instructions: |
+      Read the following files from /task/input_artifacts/:
+        - sales_south_q1.csv
+        - sales_south_q2.csv
+        - sales_south_q3.csv
+        - sales_south_q4.csv
+
+      Use /task/input_artifacts/schema_reference.json to identify the correct
+      column names (row_id, sub_category, sales) for each file.
+
+      For each file:
+      - Rename columns to: row_id, sub_category, sales
+      - Parse sales: strip $, USD, commas, whitespace, convert to numeric
+      - Remove rows where sales is null, non-numeric, or negative
+      - Strip whitespace and normalize casing on sub_category (Title Case)
+      - Track count of skipped rows
+
+      Combine all 4 quarters into one list.
+
+      Output to /task/work/south.json using the same structure.
+      Set region = "south"
+
+  - id: reducer
+    role: Reducer Agent
+    depends_on:
+      - map_west
+      - map_east
+      - map_central
+      - map_south
+
+    instructions: |
+      Read:
+      - /task/work/west.json
+      - /task/work/east.json
+      - /task/work/central.json
+      - /task/work/south.json
+
+      Merge all records into one combined list.
+
+      Deduplicate records by row_id.
+      Keep the first occurrence in this order: west -> east -> central -> south.
+      Count all removed duplicate rows.
+
+      Sum skipped counts from all 4 map agents.
+
+      Compute:
+      - total_sales: sum of all valid sales after dedup, rounded to 2 decimal places
+      - region_totals: per-region sales sum after dedup, each rounded to 2 decimal places
+      - top_3_sub_categories: top 3 sub-categories by total sales, descending order
+      - duplicate_rows_removed: total duplicates removed
+      - records_skipped_missing_sales: total skipped across all agents
+
+      Write final output to /task/report.json
