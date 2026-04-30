@@ -1,366 +1,236 @@
-# SwarmBench Assessment — Regional Sales Reconciliation
+# SwarmBench — Regional Sales Reconciliation
 
-## Overview
+A SwarmBench benchmark task designed to evaluate whether a multi-agent AI system can outperform a single AI agent on a coordination-heavy data reconciliation workflow.
 
-This project is a SwarmBench benchmark task designed to evaluate whether a **multi-agent AI system** can outperform a **single AI agent** on a coordination-heavy data reconciliation workflow.
-
-The benchmark intentionally creates:
+The task intentionally creates:
 
 * multiple independent artifacts
-* schema inconsistencies
-* cross-file reconciliation pressure
-* deduplication requirements
-* synthesis-heavy aggregation
+* inconsistent schemas
+* cross-file deduplication pressure
+* noisy and invalid data
+* synthesis-heavy aggregation requirements
 
-The task is structured so that:
+The benchmark is structured so that:
 
-* a **single agent** is likely to struggle with bookkeeping, consistency, and global reconciliation
+* a **single agent** is likely to struggle with bookkeeping, consistency, and reconciliation
 * a **multi-agent system** can succeed through decomposition, parallel processing, and reducer synthesis
 
 ---
 
-# Assessment Goal
+# Task Overview
 
-The objective is **not** to trick the single agent.
+The agent is given multiple regional sales CSV files located in:
 
-The objective is to create a task where:
+```text id="3z0s8f"
+environment/input_artifacts/
+```
 
-* one agent faces structural pressure from context and coordination complexity
-* multiple agents can divide work cleanly and synthesize results reliably
+Each file:
 
-This assessment evaluates whether the task design is **structurally likely** to produce a meaningful performance gap between:
+* uses different column names
+* contains duplicates
+* contains invalid sales values
+* contains formatting inconsistencies
 
-* `swarm-kimi-single`
-* `swarm-kimi-multi`
+The agent must:
 
----
+1. normalize schemas
+2. clean records
+3. remove duplicates globally
+4. compute aggregate metrics
+5. generate a final reconciliation report
 
-# Important Clarification
+Final output:
 
-You are **NOT required** to:
-
-* run single-agent trials
-* run multi-agent trials
-* prove a 40-point benchmark gap
-* submit execution logs
-
-You **ARE required** to:
-
-* build a valid benchmark package
-* run the oracle solution once
-* confirm the oracle scores `1.0`
-
-The oracle verification proves:
-
-* Docker setup works
-* solution wiring works
-* verifier logic works
-* task package is valid
+```text id="h5v6aq"
+/task/report.json
+```
 
 ---
 
-# What SwarmBench Evaluates
+# Repository Structure
 
-SwarmBench measures whether multi-agent systems outperform a single agent on tasks that are:
-
-* too broad
-* too coordination-heavy
-* too artifact-heavy
-* too synthesis-heavy
-
-for a single agent to solve reliably within the same constraints.
-
----
-
-# Benchmark Structure
-
-Each benchmark task is a self-contained package.
-
-## Required Files
-
-| File                           | Purpose                                   |
-| ------------------------------ | ----------------------------------------- |
-| `instruction.md`               | Task prompt shown to the agent            |
-| `task.toml`                    | Task metadata and execution configuration |
-| `decomposition.yaml`           | Multi-agent decomposition plan            |
-| `environment/Dockerfile`       | Runtime environment                       |
-| `environment/input_artifacts/` | Dataset artifacts                         |
-| `solution/solve.sh`            | Oracle solution                           |
-| `tests/test.sh`                | Verifier entrypoint                       |
-| `tests/verify.py`              | Deterministic scoring logic               |
-| `tests/oracle.json`            | Expected oracle output                    |
-| `tests/judge.py`               | Placeholder LLM judge                     |
+```text id="1k9u3x"
+Requirements/
+├── instruction.md
+├── task.toml
+├── decomposition.yaml
+│
+├── environment/
+│   ├── Dockerfile
+│   └── input_artifacts/
+│       ├── sales_west.csv
+│       ├── sales_east.csv
+│       ├── sales_central.csv
+│       └── sales_south.csv
+│
+├── solution/
+│   └── solve.sh
+│
+└── tests/
+    ├── verify.py
+    ├── test.sh
+    └── judge.py
+```
 
 ---
 
-# Harbor Evaluation Flow
+# Dataset Characteristics
 
-Harbor is the execution harness used by SwarmBench.
+The benchmark dataset is generated from the Kaggle Superstore dataset and intentionally modified to create coordination pressure.
 
-At runtime Harbor:
+Injected issues include:
 
-1. Reads the task directory
-2. Builds the Docker image
-3. Starts the task container
-4. Provides `instruction.md` to the agent
-5. Lets the agent operate inside the container
-6. Runs `tests/test.sh`
-7. Reads the reward produced by the verifier
-8. Records logs and trajectories
+| Issue                      | Description                                       |
+| -------------------------- | ------------------------------------------------- |
+| Schema inconsistencies     | Different column names across files               |
+| Cross-file duplicates      | Duplicate `row_id` values across regions          |
+| Invalid sales values       | Null, empty, negative, and malformed sales values |
+| Whitespace inconsistencies | Leading/trailing whitespace in categories         |
+| Noisy columns              | Irrelevant metadata columns added                 |
+| Dirty numeric formats      | Currency strings and inconsistent formatting      |
+| Shuffled ordering          | Randomized row and column order                   |
 
-You do not need to manually orchestrate containers during evaluation.
+These issues increase:
+
+* reconciliation complexity
+* bookkeeping burden
+* context pressure
+* aggregation difficulty
 
 ---
 
-# Important Design Rule
+# Multi-Agent Decomposition
 
-## `instruction.md` MUST remain role-neutral
+The benchmark follows a map-reduce style workflow.
 
-It is shared by:
+```text id="x2r1eg"
+map_west    ─┐
+map_east    ─┤
+map_central ─┤──► reducer ──► /task/report.json
+map_south   ─┘
+```
 
-* single-agent runs
-* multi-agent runs
+Each map agent:
 
-Do NOT include:
+* owns one regional CSV
+* normalizes schemas
+* cleans invalid records
+* writes intermediate outputs
 
-* sub-agent instructions
-* shard assignments
-* orchestration logic
-* reducer instructions
-* map-reduce details
+The reducer:
 
-Those belong ONLY inside:
+* merges all intermediate outputs
+* removes duplicates globally
+* computes aggregate metrics
+* generates the final report
 
-```text
+Decomposition details are defined in:
+
+```text id="b2f5zx"
 decomposition.yaml
 ```
 
 ---
 
-# Benchmark Task
+# Running the Oracle
 
-## Regional Sales Reconciliation
+## Prerequisites
 
-The task uses multiple regional sales CSV exports containing:
-
-* inconsistent schemas
-* duplicate records
-* invalid sales values
-* whitespace inconsistencies
-* noisy irrelevant columns
-* dirty numeric formats
-
-The agent must:
-
-* normalize schemas
-* clean records
-* reconcile duplicates globally
-* compute aggregate metrics
-* generate a final JSON report
+* Docker installed
+* Docker daemon running
 
 ---
-
-# Multi-Agent Design Pattern
-
-The benchmark follows a classic:
-
-```text
-many artifacts
-    ↓
-independent shard processing
-    ↓
-reducer synthesis
-    ↓
-verified final output
-```
-
-This creates a natural advantage for multi-agent systems.
-
----
-
-# Intended Single-Agent Failure Modes
-
-The benchmark is designed to pressure single agents through:
-
-* context overload
-* attention degradation
-* incomplete artifact coverage
-* missed edge cases
-* inconsistent reconciliation
-* bookkeeping errors
-* timeout pressure
-
----
-
-# Intended Multi-Agent Success Modes
-
-The benchmark rewards:
-
-* independent shard ownership
-* parallel extraction
-* isolated schema normalization
-* reducer-based synthesis
-* explicit intermediate outputs
-* coordinated reconciliation
-
----
-
-# Current Task Structure
-
-## Dataset Shape
-
-The benchmark generates:
-
-* 16 regional CSV shards
-* randomized schemas
-* cross-file duplicates
-* invalid sales values
-* casing inconsistencies
-* whitespace inconsistencies
-* shuffled rows/columns
-* noisy metadata columns
-
-This substantially increases reconciliation complexity while remaining fully solvable through decomposition.
-
----
-
-# File Responsibilities
-
-| File                     | Responsibility                |
-| ------------------------ | ----------------------------- |
-| `instruction.md`         | Neutral task prompt           |
-| `task.toml`              | Harbor execution metadata     |
-| `decomposition.yaml`     | Map-reduce decomposition plan |
-| `environment/Dockerfile` | Runtime container             |
-| `solution/solve.sh`      | Oracle implementation         |
-| `tests/verify.py`        | Deterministic verifier        |
-| `tests/test.sh`          | Verifier runner               |
-| `tests/oracle.json`      | Expected oracle output        |
-
----
-
-# Design Decisions
-
-## instruction.md
-
-* Role-neutral
-* No decomposition hints
-* Requires global deduplication tracking
-* Forces schema inspection across artifacts
-
-## task.toml
-
-* `coordination_pattern = "map_reduce"`
-* `verifier_type = "executable"`
-* Tight execution timeout
-* Structured for reducer synthesis
-
-## decomposition.yaml
-
-* One map agent per shard group
-* Explicit schema mappings
-* Reducer waits on all map agents
-* Intermediate outputs written to `/task/work/*.json`
-
-## Dockerfile
-
-* Minimal environment
-* Pandas-based runtime
-* Input artifacts baked into image
-* `/task/work` pre-created
-
-## solve.sh
-
-* Fully deterministic oracle
-* Fixed reconciliation order
-* Produces `/task/report.json`
-
-## verify.py
-
-* Deterministic scoring
-* Field-by-field validation
-* Floating-point tolerance handling
-* Writes reward to `/task/reward`
-
----
-
-# Oracle Verification Workflow
 
 ## Build Docker Image
 
-```bash
-docker build -f environment/Dockerfile -t regional-sales .
+From the `Requirements/` directory:
+
+```bash id="zkwn4u"
+docker build -f environment/Dockerfile -t swarm-sales-task .
 ```
 
-## Start Container
+---
 
-```bash
-docker run -it regional-sales bash
+## Run Oracle + Verifier
+
+```bash id="a49q0m"
+docker run --rm swarm-sales-task bash -c "bash /task/solution/solve.sh && bash /task/tests/test.sh"
 ```
 
-## Run Oracle
+---
 
-```bash
-bash solution/solve.sh
-```
+# Expected Result
 
-## Run Verifier
+Successful execution should produce:
 
-```bash
-bash tests/test.sh
-```
-
-Expected output:
-
-```text
+```text id="cx0hr7"
 Score: 1.0
+Reward: 1.0
 ```
 
 ---
 
-# Submission Checklist
+# Expected Oracle Output
 
-## Data & Setup
-
-* [x] Download Superstore dataset
-* [x] Generate benchmark CSV shards
-* [x] Create inconsistent schemas
-* [x] Inject duplicates and invalid values
-
-## Benchmark Files
-
-* [x] instruction.md
-* [x] task.toml
-* [x] decomposition.yaml
-* [x] environment/Dockerfile
-* [x] solution/solve.sh
-* [x] tests/verify.py
-* [x] tests/test.sh
-
-
-* [x] solution/oracle.json
-* [x]  tests/oracle.json
-* [x] tests/judge.py
-
-## Validation
-
-* [x]  Build Docker image
-* [x]  Run oracle
-* [x]  Run verifier
-* [x]  Confirm oracle score = 1.0
+```json id="r7cqje"
+{
+  "total_sales": 2286590.24,
+  "region_totals": {
+    "west": 722066.44,
+    "east": 674463.32,
+    "central": 498656.98,
+    "south": 391403.5
+  },
+  "top_3_sub_categories": [
+    "Phones",
+    "Chairs",
+    "Storage"
+  ],
+  "duplicate_rows_removed": 12,
+  "records_skipped_missing_sales": 53
+}
+```
 
 ---
 
-# Final Goal
+# Verification
 
-The final benchmark should demonstrate a realistic coordination advantage where:
+The verifier is implemented in:
 
-* single-agent systems struggle with scale and reconciliation
-* multi-agent systems succeed through decomposition and synthesis
+```text id="7qef38"
+tests/verify.py
+```
 
-while remaining:
+Scoring is deterministic and field-based.
 
-* deterministic
-* verifiable
-* reproducible
-* structurally fair
+The verifier checks:
+
+* total sales
+* regional totals
+* top sub-categories
+* duplicate count
+* skipped record count
+
+Float comparisons use a tolerance of `0.01`.
+
+The final reward is written to:
+
+```text id="06ozoc"
+/task/reward
+```
+
+which Harbor reads during evaluation.
+
+---
+
+# Task Metadata
+
+| Field                | Value                              |
+| -------------------- | ---------------------------------- |
+| Domain               | data-analysis                      |
+| Difficulty           | hard                               |
+| Coordination Pattern | map_reduce                         |
+| Verifier Type        | executable                         |
+| Runtime Environment  | Docker                             |
+| Primary Failure Mode | cross-file reconciliation overload |
