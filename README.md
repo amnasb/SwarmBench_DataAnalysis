@@ -87,3 +87,48 @@ duplicate records
 per-shard calculations
 final reconciliation across all shards
 Single-agent likely fails by processing only some files or producing inconsistent aggregation.
+
+
+Here's your full to-do list:
+                                                                                                          
+    ---                                                                                                   
+    SwarmBench Assessment — To-Do List                                                                    
+                                                                                                          
+    Data & Setup  - DONE
+
+    - Read and understand the README / assessment requirements
+    - Confirm Docker is installed
+    - Confirm file structure is complete
+    - Download Superstore dataset from Kaggle
+    - Run data_prep.ipynb to generate 4 regional CSV files
+    - Verify oracle expected output (oracle_expected.json)
+
+    Task Package Files
+
+    - Write instruction.md
+    - Write task.toml
+    - Write decomposition.yaml
+    - Write environment/Dockerfile
+    - Write solution/solve.sh
+    - Write solution/oracle.json
+    - Write tests/verify.py
+    - Write tests/test.sh
+    - Write tests/oracle.json
+    - Write tests/judge.py (minimal placeholder)
+
+    Oracle Verification
+
+    - Build Docker image
+    - Run oracle (solution/solve.sh) inside container
+    - Run verifier (tests/test.sh) inside container
+    - Confirm oracle score = 1.0
+
+    Final Submission
+
+    - Review instruction.md is role-neutral
+    - Review decomposition.yaml has clear sub-agent assignments
+    - Remove any execution_logs/ if present
+    - Final check — all files present and non-empty
+
+    ---
+    11 files to write, then one oracle run to confirm. That's it.
