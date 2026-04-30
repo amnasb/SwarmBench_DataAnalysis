@@ -57,6 +57,7 @@ For this assessment, do not include execution_logs/. You are expected to run onl
 Task Shape: many artifacts -> independent subproblem solving -> reducer synthesis -> verified final output
 
 The goal is not to trick the single agent. The goal is to create real structural pressure.
+
 Good single-agent failure modes:
 context overload
 attention degradation
@@ -64,6 +65,7 @@ incomplete artifact coverage
 missed secondary requirements
 timeout under the same time budget
 failure to reconcile outputs consistently
+
 Good multi-agent success modes:
 independent shard ownership
 parallel extraction or inspection
