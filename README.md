@@ -89,7 +89,7 @@ final reconciliation across all shards
 Single-agent likely fails by processing only some files or producing inconsistent aggregation.
 
 
-Here's your full to-do list:
+full to-do list:
                                                                                                           
     ---                                                                                                   
     SwarmBench Assessment — To-Do List                                                                    
