@@ -134,3 +134,33 @@ full to-do list:
 
     ---
     11 files to write, then one oracle run to confirm. That's it.
+
+
+INSTRUCTION.MD SPECS:
+  - It tells the agent **what** to do but not **how** to split the work — a single agent must hold all 4
+  files in context simultaneously
+  - The column name differences are hinted at but not spelled out — the agent must inspect each file
+  - "First occurrence" rule for deduplication requires tracking IDs across files — hard for a single agent
+   to do reliably
+
+
+Tasks.Toml:
+Key fields explained:
+  - timeout = 600 — 10 minutes, enough for multi-agent but tight for single agent processing all 4 files
+  carefully
+  - verifier_type = "executable" — means tests/verify.py will score the output (not an LLM judge)
+  - coordination_pattern = "map_reduce" — tells Harbor this is a map→reduce style task
+
+Decomposition.yam:
+Note the depends_on on the reducer — this is what tells the orchestrator to wait for all 4 map agents to
+   finish before running the reducer.
+
+Dockerfile:
+What each line does:
+  - FROM python:3.11-slim — lightweight Python image
+  - WORKDIR /task — sets /task as the working directory inside the container
+  - RUN pip install pandas — installs the only dependency the agent needs
+  - COPY input_artifacts/ — copies your 4 CSV files into the container at build time
+  - RUN mkdir -p /task/work — creates the /task/work/ folder where map agents write their intermediate
+  JSON files
+

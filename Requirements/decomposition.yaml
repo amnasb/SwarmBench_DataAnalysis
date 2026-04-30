@@ -1,0 +1,61 @@
+task: Regional Sales Reconciliation                                                                     
+  strategy: map_reduce
+
+  agents:
+    - id: map_west
+      role: Map Agent — West Region
+      instructions: |
+        Read /task/input_artifacts/sales_west.csv
+        Columns: row_id, sub_category, sales, quantity, order_date
+        - Drop rows where sales is null or negative
+        - Strip whitespace from sub_category
+        - Output to /task/work/west.json with structure:
+          {"region": "west", "records": [{"row_id": ..., "sub_category": ..., "sales": ...}, ...],
+  "skipped": <int>}
+
+    - id: map_east
+      role: Map Agent — East Region
+      instructions: |
+        Read /task/input_artifacts/sales_east.csv
+        Columns: transaction_id, product_category, revenue, units, date
+        Map: transaction_id → row_id, product_category → sub_category, revenue → sales
+        - Drop rows where sales is null or negative
+        - Strip whitespace from sub_category
+        - Output to /task/work/east.json with same structure as above, region: "east"
+
+    - id: map_central
+      role: Map Agent — Central Region
+      instructions: |
+        Read /task/input_artifacts/sales_central.csv
+        Columns: txn_id, category, sales_amount, qty, sale_date
+        Map: txn_id → row_id, category → sub_category, sales_amount → sales
+        - Drop rows where sales is null or negative
+        - Strip whitespace from sub_category
+        - Output to /task/work/central.json with same structure, region: "central"
+
+    - id: map_south
+      role: Map Agent — South Region
+      instructions: |
+        Read /task/input_artifacts/sales_south.csv
+        Columns: id, item_category, amount, num_units, transaction_date
+        Map: id → row_id, item_category → sub_category, amount → sales
+        - Drop rows where sales is null or negative
+        - Strip whitespace from sub_category
+        - Output to /task/work/south.json with same structure, region: "south"
+
+    - id: reducer
+      role: Reducer Agent
+      depends_on: [map_west, map_east, map_central, map_south]
+      instructions: |
+        Read all 4 files from /task/work/*.json
+        Merge all records into one list.
+        Deduplicate by row_id — keep first occurrence (west → east → central → south order).
+        Count duplicates removed.
+        Sum skipped counts from all map agents.
+        Compute:
+          - total_sales: sum of all valid sales after dedup
+          - region_totals: per-region sales sum after dedup
+          - top_3_sub_categories: top 3 by total sales descending
+          - duplicate_rows_removed: total duplicates removed
+          - records_skipped_missing_sales: total skipped across all agents
+        Write final output to /task/report.json
