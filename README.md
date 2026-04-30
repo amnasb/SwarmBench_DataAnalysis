@@ -136,31 +136,51 @@ full to-do list:
     11 files to write, then one oracle run to confirm. That's it.
 
 
-INSTRUCTION.MD SPECS:
-  - It tells the agent **what** to do but not **how** to split the work — a single agent must hold all 4
-  files in context simultaneously
-  - The column name differences are hinted at but not spelled out — the agent must inspect each file
-  - "First occurrence" rule for deduplication requires tracking IDs across files — hard for a single agent
-   to do reliably
+---
+    INSTRUCTION.MD SPECS:
+    - Role-neutral — no mention of sub-agents, shards, or splitting work
+    - Column name differences are hinted at but not spelled out — agent must inspect each file
+    - "First occurrence" deduplication rule requires tracking IDs across all files simultaneously — hard
+    for a single agent to do reliably
+    - Does not prescribe how to process files — single agent must manage all 4 in context at once
 
+    TASK.TOML SPECS:
+    - timeout = 600 — 10 minutes, enough for multi-agent parallel work but tight for a single agent
+    processing all 4 files carefully and sequentially
+    - verifier_type = "executable" — scoring is done by verify.py, not an LLM judge — output must be exact
+    - coordination_pattern = "map_reduce" — signals to Harbor that this task is designed for parallel
+    shard processing followed by a reduction step
 
-Tasks.Toml:
-Key fields explained:
-  - timeout = 600 — 10 minutes, enough for multi-agent but tight for single agent processing all 4 files
-  carefully
-  - verifier_type = "executable" — means tests/verify.py will score the output (not an LLM judge)
-  - coordination_pattern = "map_reduce" — tells Harbor this is a map→reduce style task
+    DECOMPOSITION.YAML SPECS:
+    - Only shown to the multi-agent system, never to the single agent
+    - Each map agent owns exactly one file — clear shard ownership, no overlap
+    - Column mapping is spelled out explicitly per agent — removes ambiguity for sub-agents
+    - depends_on on the reducer tells the orchestrator to wait for all 4 map agents to finish before
+    running the reducer
+    - Intermediate results go to /task/work/*.json — reducer reads from there, not directly from CSVs
 
-Decomposition.yam:
-Note the depends_on on the reducer — this is what tells the orchestrator to wait for all 4 map agents to
-   finish before running the reducer.
+    DOCKERFILE SPECS:
+    - WORKDIR /task — establishes the base path used by all scripts and agents
+    - COPY input_artifacts/ bakes the data into the image at build time — agent doesn't need to fetch
+    anything
+    - mkdir -p /task/work — pre-creates the folder map agents write intermediate results to
+    - Only dependency is pandas — kept minimal on purpose
 
-Dockerfile:
-What each line does:
-  - FROM python:3.11-slim — lightweight Python image
-  - WORKDIR /task — sets /task as the working directory inside the container
-  - RUN pip install pandas — installs the only dependency the agent needs
-  - COPY input_artifacts/ — copies your 4 CSV files into the container at build time
-  - RUN mkdir -p /task/work — creates the /task/work/ folder where map agents write their intermediate
-  JSON files
+    SOLVE.SH SPECS:
+    - Fully self-contained Python heredoc — no external script files needed inside the container
+    - Processing order is fixed (west → east → central → south) — determines which occurrence is "first"
+    during deduplication
+    - Identical logic to data_prep.py oracle computation — guaranteed to produce the same numbers as
+    oracle_expected.json
+    - Writes to /task/report.json — same path the verifier reads from
 
+    VERIFY.PY SPECS:
+    - Oracle values are hardcoded — no dependency on external oracle.json file at runtime
+    - Scoring is field-by-field — each of 5 fields worth 0.2 points, total = 1.0
+    - Uses 0.01 tolerance for float comparisons to avoid floating point precision issues
+    - Writes reward to /task/reward file — this is what Harbor reads to record the score
+
+    TEST.SH SPECS:
+    - Calls verify.py which handles all scoring logic
+    - Prints the reward to stdout for Harbor to capture
+    - Kept minimal — all logic lives in verify.py
