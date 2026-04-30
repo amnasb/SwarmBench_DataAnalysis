@@ -1,0 +1,12 @@
+{
+  "total_sales": 1856319.28,
+  "region_totals": {
+    "west": 732757.98,
+    "east": 575807.4,
+    "central": 319601.36,
+    "south": 228152.53
+  },
+  "top_3_sub_categories": ["Chairs", "Phones", "Binders"],
+  "duplicate_rows_removed": 9937,
+  "records_skipped_missing_sales": 1152
+}

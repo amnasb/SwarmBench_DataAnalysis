@@ -2,16 +2,16 @@ import json
 import sys
 
 ORACLE = {
-    "total_sales": 2286590.24,
+    "total_sales": 1856319.28,
     "region_totals": {
-        "west": 722066.44,
-        "east": 674463.32,
-        "central": 498656.98,
-        "south": 391403.5
+        "west": 732757.98,
+        "east": 575807.4,
+        "central": 319601.36,
+        "south": 228152.53
     },
-    "top_3_sub_categories": ["Phones", "Chairs", "Storage"],
-    "duplicate_rows_removed": 12,
-    "records_skipped_missing_sales": 53
+    "top_3_sub_categories": ["Chairs", "Phones", "Binders"],
+    "duplicate_rows_removed": 9937,
+    "records_skipped_missing_sales": 1152
 }
 
 def score(report):

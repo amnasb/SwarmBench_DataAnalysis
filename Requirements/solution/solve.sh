@@ -2,33 +2,51 @@
 python3 - << 'EOF'
 import pandas as pd
 import json
+import os
 
-INPUT_DIR = '/task/input_artifacts'
-OUTPUT    = '/task/report.json'
+INPUT_DIR   = '/task/input_artifacts'
+OUTPUT      = '/task/report.json'
+SCHEMA_FILE = os.path.join(INPUT_DIR, 'schema_reference.json')
 
-SCHEMA_MAP = [
-    ('sales_west.csv',    'row_id',         'sub_category',    'sales',        'west'),
-    ('sales_east.csv',    'transaction_id', 'product_category','revenue',      'east'),
-    ('sales_central.csv', 'txn_id',         'category',        'sales_amount', 'central'),
-    ('sales_south.csv',   'id',             'item_category',   'amount',       'south'),
-]
+with open(SCHEMA_FILE) as f:
+    schema = json.load(f)
 
 frames = []
 total_skipped = 0
 
-for fname, id_col, cat_col, sales_col, region in SCHEMA_MAP:
-    d = pd.read_csv(f'{INPUT_DIR}/{fname}')
-    d = d.rename(columns={id_col: 'row_id', cat_col: 'sub_category', sales_col: 'sales'})
+for entry in schema:
+    fname  = os.path.basename(entry['file'].replace('\\', '/'))
+    region = fname.replace('sales_', '').rsplit('_', 1)[0]
+
+    id_col  = entry['id_column']
+    cat_col = entry['category_column']
+    sal_col = entry['sales_column']
+
+    d = pd.read_csv(os.path.join(INPUT_DIR, fname))
+    d = d.rename(columns={id_col: 'row_id', cat_col: 'sub_category', sal_col: 'sales'})
     d = d[['row_id', 'sub_category', 'sales']].copy()
 
-    # Count and remove null and negative sales
-    invalid = int(d['sales'].isna().sum()) + int((d['sales'].dropna() < 0).sum())
+    # Parse dirty sales strings: strip $, USD, commas, whitespace -> numeric
+    d['sales'] = (
+        d['sales'].astype(str)
+        .str.strip()
+        .str.replace('$', '', regex=False)
+        .str.replace('USD', '', regex=False)
+        .str.replace(',', '', regex=False)
+        .str.strip()
+    )
+    d['sales'] = pd.to_numeric(d['sales'], errors='coerce')
+
+    # Count invalid (NaN or negative) before dropping
+    invalid = int(d['sales'].isna().sum()) + int((d['sales'].dropna() <= 0).sum())
     total_skipped += invalid
+
     d = d.dropna(subset=['sales'])
     d = d[d['sales'] > 0]
 
-    # Strip whitespace from sub_category
-    d['sub_category'] = d['sub_category'].str.strip()
+    # Normalize sub_category: strip whitespace + title case
+    d['sub_category'] = d['sub_category'].str.strip().str.title()
+
     d['region'] = region
     frames.append(d)
 
@@ -39,7 +57,6 @@ before   = len(combined)
 combined = combined.drop_duplicates(subset=['row_id'], keep='first')
 after    = len(combined)
 
-# Compute output fields
 region_totals = {
     r: round(float(combined[combined['region'] == r]['sales'].sum()), 2)
     for r in ['west', 'east', 'central', 'south']
